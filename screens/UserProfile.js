@@ -1,0 +1,133 @@
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, Text, View, Image, TouchableOpacity } from 'react-native';
+import { getAuth, signOut } from 'firebase/auth';
+
+const UserProfile = ({ navigation }) => {
+  const auth = getAuth();
+  const [userProfile, setUserProfile] = useState(null);
+  const defaultProfileImage = 'https://th.bing.com/th/id/OIP.RpahWNi7KifKy3COEQYxbwAAAA?w=240&h=240&rs=1&pid=ImgDetMain';
+  const [greeting, setGreeting] = useState('');
+
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (user) {
+      setUserProfile({
+        displayName: user.displayName,
+        email: user.email,
+        photoURL: user.photoURL,
+      });
+    }
+    const now = new Date();
+    const hours = now.getHours();
+    if (hours < 12) {
+      setGreeting('Good morning');
+    } else if (hours < 18) {
+      setGreeting('Good afternoon');
+    } else {
+      setGreeting('Good evening');
+    }
+    navigation.setOptions({
+      headerShown: false
+    });
+  }, [auth]);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      // Navigate to the authentication screen after logout
+      navigation.navigate('LoginScreen');
+    } catch (error) {
+      console.error('Error logging out:', error);
+    }
+  };
+
+  return (
+    <View style={styles.container}>
+      {userProfile && (
+        <>
+          <View style={styles.header}>
+            <Image
+              source={{ uri: userProfile.photoURL || defaultProfileImage }}
+              style={styles.profileImage}
+            />
+            <View style={styles.headerContent}>
+              <Text style={styles.greeting}>{greeting},</Text>
+              <Text style={styles.displayName}>{userProfile.displayName}</Text>
+            </View>
+          </View>
+          <View style={styles.credentials}>
+            <Text style={styles.credentialsHeading}>Email</Text>
+            <Text style={styles.email}>{userProfile.email}</Text>
+          </View>
+          <View style={styles.button}>
+            <TouchableOpacity style={styles.editButton} activeOpacity={0.5} onPress={handleLogout}>
+              <Text style={styles.editButtonText}>Logout</Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      )}
+    </View>
+  );
+};
+
+export default UserProfile;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: 'black'
+  },
+  header: {
+    flexDirection: 'row',
+  },
+  headerContent: {
+    flexDirection: 'column',
+    justifyContent: 'center',
+  },
+  greeting: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  profileImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 75,
+    margin: 20,
+  },
+  displayName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  button:{
+    alignItems: 'center',
+    marginVertical: 20
+  },
+  editButton: {
+    backgroundColor: '#faad14',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    width: 190,
+  },
+  editButtonText: {
+    color: 'black',
+    fontWeight: 'bold',
+    textAlign: 'center'
+  },
+  credentials: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around'
+  },
+  credentialsHeading: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: 'bold'
+  },
+  email: {
+    color: '#FFFFFF',
+    fontSize: 18,
+  },
+});
