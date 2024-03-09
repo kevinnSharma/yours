@@ -1,19 +1,14 @@
 import React, { useEffect } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { StyleSheet, Text, TouchableOpacity, View, Alert } from 'react-native'
+import { useColorScheme, StyleSheet, TouchableOpacity } from 'react-native';
 import HomeScreen from './HomeScreen';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import UserProfile from './UserProfile';
+
 const Tab = createBottomTabNavigator();
 
-const TabLabel = ({ label, focused }) => {
-  return (
-    <Text style={{ fontSize: focused ? 20 : 16, color: focused ? 'white' : 'gray' }}>{label}</Text>
-
-  );
-};
-
 const BottomTab = ({ navigation }) => {
+  const colorScheme = useColorScheme();
   useEffect(() => {
     navigation.setOptions({
       headerShown: false,
@@ -24,27 +19,22 @@ const BottomTab = ({ navigation }) => {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarStyle: {
-          backgroundColor: 'black',
-          height: 56,
+          backgroundColor: colorScheme === 'dark' ? 'black' : 'white',
+          height: 42
         },
-        tabBarLabelStyle: {
-          display: 'none', // Hide default label
-        },
-        tabBarActiveTintColor: 'white',
+        tabBarShowLabel: false,
+        tabBarActiveTintColor: colorScheme === 'dark' ? 'white' : 'black',
         tabBarInactiveTintColor: 'gray',
-        tabBarLabel: ({ focused, color }) => (
-          <TabLabel label={route.name} focused={focused} />
-        ),
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} options={{
-        tabBarIcon: ({ color, size }) => (
-          <MaterialCommunityIcons name="home" color={color} size={size} />
-        ),
-      }} />
+        <Tab.Screen name="Home" component={HomeScreen} options={{
+          tabBarIcon: ({ color, size, focused }) => (
+            <MaterialCommunityIcons name="home" color={color} size={focused ? 30 : 24} />
+          ),
+        }} />
       <Tab.Screen name="Profile" component={UserProfile} options={{
-        tabBarIcon: ({ color, size }) => (
-          <MaterialCommunityIcons name="account" color={color} size={size} />
+        tabBarIcon: ({ color, size, focused }) => (
+          <MaterialCommunityIcons name="account" color={color} size={focused ? 30 : 24} />
         ),
       }} />
     </Tab.Navigator>

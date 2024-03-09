@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, Text, TouchableOpacity, View, useColorScheme, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { Input } from 'react-native-elements';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { collection, addDoc } from 'firebase/firestore';
@@ -10,6 +10,8 @@ const RegisterScreen = ({ navigation }) => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const colorScheme = useColorScheme();
+    const styles = getStyles(colorScheme);
 
     useEffect(() => {
         navigation.setOptions({
@@ -42,95 +44,102 @@ const RegisterScreen = ({ navigation }) => {
     };
 
     return (
-        <View style={styles.main}>
-            <Text style={styles.heading}>Register</Text>
-            <View style={styles.inputContainer}>
-                <Input
-                    placeholder='Username'
-                    value={username}
-                    onChangeText={(text) => setUsername(text)}
-                    placeholderTextColor='#FFFFFF'
-                    inputStyle={{ color: '#FFFFFF' }}
-                />
+        <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
 
-                <Input
-                    placeholder='Email'
-                    keyboardType='email-address'
-                    value={email}
-                    onChangeText={(text) => setEmail(text)}
-                    placeholderTextColor='#FFFFFF'
-                    inputStyle={{ color: '#FFFFFF' }}
-                />
-                <Input
-                    placeholder='Password'
-                    secureTextEntry
-                    value={password}
-                    onChangeText={(text) => setPassword(text)}
-                    placeholderTextColor='#FFFFFF'
-                    inputStyle={{ color: '#FFFFFF' }}
-                />
+            <View style={styles.main}>
+                <Text style={styles.heading}>Register</Text>
+                <View style={styles.inputContainer}>
+                    <Input
+                        placeholder='Username'
+                        value={username}
+                        onChangeText={(text) => setUsername(text)}
+                        placeholderTextColor={ colorScheme === 'dark' ? 'white' : 'black'}
+                        inputStyle={colorScheme === 'dark' ? 'white' : 'black' }
+                    />
 
-                <Input
-                    placeholder='Confirm Password'
-                    secureTextEntry
-                    value={confirmPassword}
-                    onChangeText={(text) => setConfirmPassword(text)}
-                    placeholderTextColor='#FFFFFF'
-                    inputStyle={{ color: '#FFFFFF' }}
-                />
+                    <Input
+                        placeholder='Email'
+                        keyboardType='email-address'
+                        value={email}
+                        onChangeText={(text) => setEmail(text)}
+                        placeholderTextColor={ colorScheme === 'dark' ? 'white' : 'black'}
+                        inputStyle={colorScheme === 'dark' ? 'white' : 'black' }
+                    />
+                    <Input
+                        placeholder='Password'
+                        secureTextEntry
+                        value={password}
+                        onChangeText={(text) => setPassword(text)}
+                        placeholderTextColor={ colorScheme === 'dark' ? 'white' : 'black'}
+                        inputStyle={colorScheme === 'dark' ? 'white' : 'black' }
+                    />
 
-                <TouchableOpacity activeOpacity={0.5} style={styles.button} onPress={signUp}>
-                    <Text style={styles.buttonText}>Register Now</Text>
-                </TouchableOpacity>
-                <Text style={{ color: '#fff', textAlign: 'center', fontSize: 16, marginVertical: 10 }}>Or</Text>
-                <TouchableOpacity activeOpacity={0.5} style={styles.button2} onPress={() => navigation.goBack()}>
-                    <Text style={styles.buttonText}>Go Back to Login</Text>
-                </TouchableOpacity>
+                    <Input
+                        placeholder='Confirm Password'
+                        secureTextEntry
+                        value={confirmPassword}
+                        onChangeText={(text) => setConfirmPassword(text)}
+                        placeholderTextColor={ colorScheme === 'dark' ? 'white' : 'black'}
+                        inputStyle={colorScheme === 'dark' ? 'white' : 'black' }
+                    />
+
+                    <TouchableOpacity activeOpacity={0.5} style={styles.button} onPress={signUp}>
+                        <Text style={styles.buttonText}>Register Now</Text>
+                    </TouchableOpacity>
+                    <Text style={{ color: '#fff', textAlign: 'center', fontSize: 16, marginVertical: 10 }}>Or</Text>
+                    <TouchableOpacity activeOpacity={0.5} style={styles.button2} onPress={() => navigation.goBack()}>
+                        <Text style={styles.buttonText}>Go Back to Login</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
-        </View>
+        </TouchableWithoutFeedback>
     );
 };
 
 export default RegisterScreen;
 
-const styles = StyleSheet.create({
-    main: {
-        flex: 1,
-        backgroundColor: '#080808',
-        alignItems: 'center',
-        justifyContent: 'space-around'
-    },
-    heading: {
-        color: '#FFFFFF',
-        fontSize: 28,
-        textAlign: 'center',
-        marginVertical: 20
-    },
-    inputContainer: {
-        width: 350,
-        alignItems: 'center',
-        marginBottom: 15
-    },
-    button: {
-        backgroundColor: '#faad14',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: 40,
-        borderRadius: 50,
-        width: 300,
-        marginTop: 10
-    },
-    buttonText: {
-        fontWeight: '700',
-        color: '#000000',
-        fontSize: 17
-    },
-    button2: {
-        backgroundColor: '#FFFFFF',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: 270,
-        height: 40,
-        borderRadius: 50,
-    }
-});
+const getStyles = (colorScheme) => {
+    return StyleSheet.create({
+        main: {
+            flex: 1,
+            backgroundColor: colorScheme === 'dark' ? 'black' : 'white',
+            alignItems: 'center',
+            justifyContent: 'space-around'
+        },
+        heading: {
+            color: colorScheme === 'dark' ? 'white' : 'black',
+            fontSize: 28,
+            textAlign: 'center',
+            marginVertical: 20
+        },
+        inputContainer: {
+            width: 350,
+            alignItems: 'center',
+            marginBottom: 15
+        },
+        button: {
+            backgroundColor: '#faad14',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: 40,
+            borderRadius: 50,
+            width: 300,
+            marginTop: 10
+        },
+        buttonText: {
+            fontWeight: '700',
+            color: '#000000',
+            fontSize: 17
+        },
+        button2: {
+            backgroundColor: '#FFFFFF',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 250,
+            height: 40,
+            borderRadius: 50,
+            borderColor: 'black',
+            borderWidth: 2
+        }
+    });
+};

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, Image, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, View, Image, TouchableOpacity, useColorScheme } from 'react-native';
 import { getAuth, signOut } from 'firebase/auth';
 
 const UserProfile = ({ navigation }) => {
@@ -7,6 +7,7 @@ const UserProfile = ({ navigation }) => {
   const [userProfile, setUserProfile] = useState(null);
   const defaultProfileImage = 'https://th.bing.com/th/id/OIP.RpahWNi7KifKy3COEQYxbwAAAA?w=240&h=240&rs=1&pid=ImgDetMain';
   const [greeting, setGreeting] = useState('');
+  const colorScheme = useColorScheme();
 
   useEffect(() => {
     const user = auth.currentUser;
@@ -42,7 +43,7 @@ const UserProfile = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colorScheme === 'dark' ? 'black' : 'white' }]}>
       {userProfile && (
         <>
           <View style={styles.header}>
@@ -51,13 +52,13 @@ const UserProfile = ({ navigation }) => {
               style={styles.profileImage}
             />
             <View style={styles.headerContent}>
-              <Text style={styles.greeting}>{greeting},</Text>
-              <Text style={styles.displayName}>{userProfile.displayName}</Text>
+              <Text style={[styles.greeting, { color: colorScheme === 'dark' ? 'white' : 'black' }]}>{greeting},</Text>
+              <Text style={[styles.displayName, { color: colorScheme === 'dark' ? 'white' : 'black' }]}>{userProfile.displayName}</Text>
             </View>
           </View>
           <View style={styles.credentials}>
-            <Text style={styles.credentialsHeading}>Email</Text>
-            <Text style={styles.email}>{userProfile.email}</Text>
+            <Text style={[styles.credentialsHeading, { color: colorScheme === 'dark' ? 'white' : 'black' }]}>Email</Text>
+            <Text style={[styles.email, { color: colorScheme === 'dark' ? 'white' : 'black' }]}>{userProfile.email}</Text>
           </View>
           <View style={styles.button}>
             <TouchableOpacity style={styles.editButton} activeOpacity={0.5} onPress={handleLogout}>
@@ -75,7 +76,6 @@ export default UserProfile;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'black'
   },
   header: {
     flexDirection: 'row',
@@ -87,7 +87,6 @@ const styles = StyleSheet.create({
   greeting: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#FFFFFF',
   },
   profileImage: {
     width: 120,
@@ -98,7 +97,7 @@ const styles = StyleSheet.create({
   displayName: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#FFFFFF',
+    letterSpacing: 1
   },
   button:{
     alignItems: 'center',
@@ -122,12 +121,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around'
   },
   credentialsHeading: {
-    color: '#FFFFFF',
     fontSize: 22,
     fontWeight: 'bold'
   },
   email: {
-    color: '#FFFFFF',
     fontSize: 18,
   },
 });

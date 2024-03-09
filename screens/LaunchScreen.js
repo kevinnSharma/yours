@@ -1,8 +1,11 @@
 import React, { useEffect } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, useColorScheme } from 'react-native';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 
 const LaunchScreen = ({ navigation }) => {
+    const colorScheme = useColorScheme();
+    const styles = getStyles(colorScheme);
+
     useEffect(() => {
         const auth = getAuth();
         const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -18,6 +21,7 @@ const LaunchScreen = ({ navigation }) => {
         // Clean up subscription on unmount
         return unsubscribe;
     }, [navigation]);
+
     useEffect(() => {
         navigation.setOptions({
             headerShown: false
@@ -37,33 +41,36 @@ const LaunchScreen = ({ navigation }) => {
 
 export default LaunchScreen;
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: 'black',
-        alignItems: 'center',
-        justifyContent: 'space-around',
-    },
-    head: {
-        color: '#FFFFFF',
-        fontSize: 26,
-        letterSpacing: 3,
-        fontWeight: 'bold',
-        marginTop: 20
-    },
-    body: {
-        letterSpacing: 6,
-        fontWeight: '300',
-        fontSize: 16,
-        color: '#FFFFFF'
-    },
-    credits: {
-        alignItems: 'center'
-    },
-    kevin: {
-        color: '#FFFFFF',
-        fontSize: 24,
-        letterSpacing: 5,
-        marginVertical: 15
-    }
-});
+const getStyles = (colorScheme) => {
+    return StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: colorScheme === 'dark' ? 'black' : 'white',
+            alignItems: 'center',
+            justifyContent: 'space-around',
+        },
+        head: {
+            color: colorScheme === 'dark' ? 'white' : 'black',
+            fontSize: 26,
+            letterSpacing: 3,
+            fontWeight: 'bold',
+            marginTop: 20
+        },
+        body: {
+            letterSpacing: 6,
+            fontWeight: '300',
+            fontSize: 16,
+            color: colorScheme === 'dark' ? 'white' : 'black',
+        },
+        credits: {
+            alignItems: 'center'
+        },
+        kevin: {
+            fontSize: 24,
+            letterSpacing: 5,
+            marginVertical: 15,
+            fontWeight: '400',
+            color: colorScheme === 'dark' ? 'white' : 'black',
+        }
+    });
+};
