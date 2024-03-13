@@ -1,11 +1,20 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, Image, TouchableOpacity, useColorScheme } from 'react-native';
-import { getAuth, signOut } from 'firebase/auth';
-
-const UserProfile = ({ navigation }) => {
+import React, {useEffect, useState} from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  Image,
+  TouchableOpacity,
+  useColorScheme,
+} from 'react-native';
+import {getAuth, signOut, updateProfile} from 'firebase/auth';
+import storage from '@react-native-firebase/storage';
+import ImagePicker from 'react-native-image-crop-picker';
+const UserProfile = ({navigation}) => {
   const auth = getAuth();
   const [userProfile, setUserProfile] = useState(null);
-  const defaultProfileImage = 'https://th.bing.com/th/id/OIP.RpahWNi7KifKy3COEQYxbwAAAA?w=240&h=240&rs=1&pid=ImgDetMain';
+  const defaultProfileImage =
+    'https://th.bing.com/th/id/OIP.RpahWNi7KifKy3COEQYxbwAAAA?w=240&h=240&rs=1&pid=ImgDetMain';
   const [greeting, setGreeting] = useState('');
   const colorScheme = useColorScheme();
 
@@ -28,10 +37,30 @@ const UserProfile = ({ navigation }) => {
       setGreeting('Good evening');
     }
     navigation.setOptions({
-      headerShown: false
+      headerShown: false,
     });
   }, [auth]);
+  const uploadPFP = async () => {
+    try {
+      const image = await ImagePicker.openPicker({
+        width: 300,
+        height: 300,
+        cropping: true,
+      });
 
+      const imageRef = storage().ref(
+        `profile_pictures/${auth.currentUser.uid}`,
+      );
+      await imageRef.putFile(image.path);
+
+      const imageUrl = await imageRef.getDownloadURL();
+      await updateProfile(auth.currentUser, {photoURL: imageUrl});
+
+      setUserProfile({...userProfile, photoURL: imageUrl});
+    } catch (error) {
+      console.error(error);
+    }
+  };
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -43,25 +72,58 @@ const UserProfile = ({ navigation }) => {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colorScheme === 'dark' ? 'black' : 'white' }]}>
+    <View
+      style={[
+        styles.container,
+        {backgroundColor: colorScheme === 'dark' ? 'black' : 'white'},
+      ]}>
       {userProfile && (
         <>
           <View style={styles.header}>
-            <Image
-              source={{ uri: userProfile.photoURL || defaultProfileImage }}
-              style={styles.profileImage}
-            />
+            <TouchableOpacity onPress={uploadPFP}>
+              <Image
+                source={{uri: userProfile.photoURL || defaultProfileImage}}
+                style={styles.profileImage}
+              />
+            </TouchableOpacity>
             <View style={styles.headerContent}>
-              <Text style={[styles.greeting, { color: colorScheme === 'dark' ? 'white' : 'black' }]}>{greeting},</Text>
-              <Text style={[styles.displayName, { color: colorScheme === 'dark' ? 'white' : 'black' }]}>{userProfile.displayName}</Text>
+              <Text
+                style={[
+                  styles.greeting,
+                  {color: colorScheme === 'dark' ? 'white' : 'black'},
+                ]}>
+                {greeting},
+              </Text>
+              <Text
+                style={[
+                  styles.displayName,
+                  {color: colorScheme === 'dark' ? 'white' : 'black'},
+                ]}>
+                {userProfile.displayName}
+              </Text>
             </View>
           </View>
           <View style={styles.credentials}>
-            <Text style={[styles.credentialsHeading, { color: colorScheme === 'dark' ? 'white' : 'black' }]}>Email</Text>
-            <Text style={[styles.email, { color: colorScheme === 'dark' ? 'white' : 'black' }]}>{userProfile.email}</Text>
+            <Text
+              style={[
+                styles.credentialsHeading,
+                {color: colorScheme === 'dark' ? 'white' : 'black'},
+              ]}>
+              Email
+            </Text>
+            <Text
+              style={[
+                styles.email,
+                {color: colorScheme === 'dark' ? 'white' : 'black'},
+              ]}>
+              {userProfile.email}
+            </Text>
           </View>
           <View style={styles.button}>
-            <TouchableOpacity style={styles.editButton} activeOpacity={0.5} onPress={handleLogout}>
+            <TouchableOpacity
+              style={styles.editButton}
+              activeOpacity={0.5}
+              onPress={handleLogout}>
               <Text style={styles.editButtonText}>Logout</Text>
             </TouchableOpacity>
           </View>
@@ -97,11 +159,11 @@ const styles = StyleSheet.create({
   displayName: {
     fontSize: 24,
     fontWeight: 'bold',
-    letterSpacing: 1
+    letterSpacing: 1,
   },
-  button:{
+  button: {
     alignItems: 'center',
-    marginVertical: 20
+    marginVertical: 20,
   },
   editButton: {
     backgroundColor: '#faad14',
@@ -113,16 +175,16 @@ const styles = StyleSheet.create({
   editButtonText: {
     color: 'black',
     fontWeight: 'bold',
-    textAlign: 'center'
+    textAlign: 'center',
   },
   credentials: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-around'
+    justifyContent: 'space-around',
   },
   credentialsHeading: {
     fontSize: 22,
-    fontWeight: 'bold'
+    fontWeight: 'bold',
   },
   email: {
     fontSize: 18,

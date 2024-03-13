@@ -11,7 +11,8 @@ const firebaseConfig = {
   storageBucket: "yours-223a7.appspot.com",
   messagingSenderId: "55992865817",
   appId: "1:55992865817:web:47a582b0b76fe649398688",
-  measurementId: "G-9JYKR1KPVQ"
+  measurementId: "G-9JYKR1KPVQ",
+  databaseURL: "https://yours-223a7-default-rtdb.firebaseio.com/"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -22,4 +23,4 @@ const auth = initializeAuth(app, {
 
 const db = getFirestore(app);
 const storage = getStorage(firebaseApp);
-export { auth, db, app, storage };
+export { auth, db, app, storage, firebaseConfig };
