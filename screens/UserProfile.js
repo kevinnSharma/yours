@@ -6,10 +6,22 @@ import {
   Image,
   TouchableOpacity,
   useColorScheme,
+  Alert
 } from 'react-native';
 import {getAuth, signOut, updateProfile} from 'firebase/auth';
 import storage from '@react-native-firebase/storage';
 import ImagePicker from 'react-native-image-crop-picker';
+import {
+  collection,
+  getDocs,
+  doc,
+  ref,
+  query,
+  where,
+  updateDoc,
+} from 'firebase/firestore';
+import {db} from '../firebase';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 const UserProfile = ({navigation}) => {
   const auth = getAuth();
   const [userProfile, setUserProfile] = useState(null);
@@ -57,8 +69,17 @@ const UserProfile = ({navigation}) => {
       await updateProfile(auth.currentUser, {photoURL: imageUrl});
 
       setUserProfile({...userProfile, photoURL: imageUrl});
+      const usersRef = collection(db, 'users');
+      const q = query(usersRef, where('uid', '==', auth.currentUser.uid));
+      const querySnapshot = await getDocs(q);
+      querySnapshot.forEach(async doc => {
+        const userDocRef = doc.ref;
+        await updateDoc(userDocRef, {
+          photoURL: imageUrl,
+        });
+      });
     } catch (error) {
-      console.error(error);
+      Alert.alert(error);
     }
   };
   const handleLogout = async () => {
@@ -67,7 +88,7 @@ const UserProfile = ({navigation}) => {
       // Navigate to the authentication screen after logout
       navigation.navigate('LoginScreen');
     } catch (error) {
-      console.error('Error logging out:', error);
+      Alert.alert('Error logging out:', error);
     }
   };
 
@@ -80,28 +101,40 @@ const UserProfile = ({navigation}) => {
       {userProfile && (
         <>
           <View style={styles.header}>
-            <TouchableOpacity onPress={uploadPFP}>
-              <Image
-                source={{uri: userProfile.photoURL || defaultProfileImage}}
-                style={styles.profileImage}
+            <View style={styles.header}>
+              <TouchableOpacity onPress={uploadPFP}>
+                <Image
+                  source={{uri: userProfile.photoURL || defaultProfileImage}}
+                  style={styles.profileImage}
+                />
+              </TouchableOpacity>
+              <View style={styles.headerContent}>
+                <Text
+                  style={[
+                    styles.greeting,
+                    {color: colorScheme === 'dark' ? 'white' : 'black'},
+                  ]}>
+                  {greeting},
+                </Text>
+                <Text
+                  style={[
+                    styles.displayName,
+                    {color: colorScheme === 'dark' ? 'white' : 'black'},
+                  ]}>
+                  {userProfile.displayName}
+                </Text>
+              </View>
+            </View>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('EditCUProfile')}
+              style={styles.editPS}>
+              <MaterialCommunityIcons
+                name="pencil"
+                color={colorScheme === 'dark' ? 'white' : 'black'}
+                size={30}
+                style={styles.editPSBtn}
               />
             </TouchableOpacity>
-            <View style={styles.headerContent}>
-              <Text
-                style={[
-                  styles.greeting,
-                  {color: colorScheme === 'dark' ? 'white' : 'black'},
-                ]}>
-                {greeting},
-              </Text>
-              <Text
-                style={[
-                  styles.displayName,
-                  {color: colorScheme === 'dark' ? 'white' : 'black'},
-                ]}>
-                {userProfile.displayName}
-              </Text>
-            </View>
           </View>
           <View style={styles.credentials}>
             <Text
@@ -141,6 +174,7 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
+    justifyContent: 'space-around',
   },
   headerContent: {
     flexDirection: 'column',
@@ -160,6 +194,8 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     letterSpacing: 1,
+    flexWrap: 'wrap', // Allow text to wrap to the next line
+    width: 150, // Set a width to limit the text length before wrapping
   },
   button: {
     alignItems: 'center',
@@ -189,4 +225,10 @@ const styles = StyleSheet.create({
   email: {
     fontSize: 18,
   },
+  editPS: {
+    alignItems: 'flex-end',
+    marginHorizontal: 20,
+    marginTop: 20,
+  },
+  editPSBtn: {},
 });

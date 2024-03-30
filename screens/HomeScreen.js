@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, TextInput, FlatList, TouchableOpacity, useColorScheme, Keyboard, TouchableWithoutFeedback } from 'react-native'; // Add useColorScheme to imports
+import { StyleSheet, Text, View, TextInput, FlatList, TouchableOpacity, useColorScheme, Keyboard, TouchableWithoutFeedback, Alert } from 'react-native'; // Add useColorScheme to imports
 import { Input } from 'react-native-elements';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import Header from '../components/Header';
@@ -20,14 +20,14 @@ const HomeScreen = ({ navigation }) => {
     }
 
     const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('username', '>=', searchQuery), where('username', '<=', searchQuery + '\uf8ff'));
+    const q = query(usersRef, where('username', '==', searchQuery));
 
     try {
       const querySnapshot = await getDocs(q);
       const results = querySnapshot.docs.map(doc => doc.data());
       setSearchResults(results);
     } catch (error) {
-      console.error('Error searching for users:', error);
+      Alert.alert('Error searching for users:', error);
     }
   };
   useEffect(() => {

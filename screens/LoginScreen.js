@@ -23,7 +23,7 @@ const LoginScreen = ({ navigation }) => {
                 navigation.navigate("BottomTab");
             }).catch((error) => {
                 // An error occurred
-                console.log(error.message);
+                Alert.alert(error.message);
             })
             .catch((error) => {
                 Alert.alert(error.message);

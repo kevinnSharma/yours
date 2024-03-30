@@ -1,40 +1,104 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, TextInput, KeyboardAvoidingView, useColorScheme, Alert } from 'react-native';
-import { collection, addDoc, query, where, orderBy, limit, onSnapshot, deleteDoc, getDocs } from 'firebase/firestore';
+import React, {useEffect, useState, useRef} from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  TextInput,
+  KeyboardAvoidingView,
+  useColorScheme,
+  Alert,
+  Keyboard
+} from 'react-native';
+import {
+  collection,
+  addDoc,
+  query,
+  where,
+  orderBy,
+  limit,
+  onSnapshot,
+  deleteDoc,
+  getDocs,
+  startAfter,
+} from 'firebase/firestore';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { KeyboardAwareFlatList } from 'react-native-keyboard-aware-scroll-view';
-import { db } from '../firebase';
-import { getAuth } from 'firebase/auth';
+import {KeyboardAwareFlatList} from 'react-native-keyboard-aware-scroll-view';
+import {db} from '../firebase';
+import {getAuth} from 'firebase/auth';
 
-const ChatScreen = ({ route, navigation }) => {
-  const { user, chatId } = route.params;
+const ChatScreen = ({route, navigation}) => {
+  const {user, chatId} = route.params;
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
   const auth = getAuth();
   const currentUserId = auth.currentUser.uid;
   const currentUserName = auth.currentUser.displayName;
   const [lastMessageDate, setLastMessageDate] = useState(null);
-  const [shouldUpdateLastMessageDate, setShouldUpdateLastMessageDate] = useState(false);
-  const flatListRef = React.useRef(null);
+  const [loadingMoreMessages, setLoadingMoreMessages] = useState(false);
+  const [shouldUpdateLastMessageDate, setShouldUpdateLastMessageDate] =
+    useState(false);
+  const [lastVisibleMessage, setLastVisibleMessage] = useState(null);
+  const flatListRef = useRef(null);
   const colorScheme = useColorScheme();
   const styles = getStyles(colorScheme);
+  const pageSize = 20; // Number of messages to load per page
+
+  const scrollToEnd = () => {
+    if (flatListRef.current) {
+      flatListRef.current.scrollToEnd({ animated: true });
+    }
+  };
 
   useEffect(() => {
-    const q = query(
-      collection(db, 'chats', chatId, 'messages'),
-      orderBy('createdAt'),
-      limit(500)
+    const unsubscribe = onSnapshot(
+      query(
+        collection(db, 'chats', chatId, 'messages'),
+        orderBy('createdAt', 'desc'),
+        limit(pageSize),
+      ),
+      snapshot => {
+        const data = [];
+        snapshot.forEach(doc => {
+          data.unshift({id: doc.id, ...doc.data()}); // Use unshift to prepend new messages
+        });
+        setMessages(data);
+        if (data.length > 0) {
+          setLastVisibleMessage(snapshot.docs[data.length - 1]);
+        }
+      },
     );
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = [];
-      snapshot.forEach((doc) => {
-        data.push({ id: doc.id, ...doc.data() });
-      });
-      setMessages(data);
-    });
 
     return () => unsubscribe();
   }, [chatId]);
+
+  const loadMoreMessages = async () => {
+    if (!lastVisibleMessage || loadingMoreMessages) return;
+    setLoadingMoreMessages(true);
+  
+    try {
+      const snapshot = await getDocs(
+        query(
+          collection(db, 'chats', chatId, 'messages'),
+          orderBy('createdAt', 'desc'),
+          startAfter(lastVisibleMessage),
+          limit(pageSize),
+        ),
+      );
+      const data = [];
+      snapshot.forEach(doc => {
+        data.unshift({id: doc.id, ...doc.data()}); // Use unshift to prepend new messages
+      });
+      setMessages(prevMessages => [...data, ...prevMessages]); // Prepend new messages to existing messages
+      if (data.length > 0) {
+        setLastVisibleMessage(snapshot.docs[data.length - 1]);
+      }
+    } catch (error) {
+      console.error('Error loading more messages:', error);
+    } finally {
+      setLoadingMoreMessages(false);
+    }
+  };
 
   const sendMessage = async () => {
     if (message.trim() === '') {
@@ -49,9 +113,9 @@ const ChatScreen = ({ route, navigation }) => {
         senderName: currentUserName,
         createdAt: new Date(),
       });
+      scrollToEnd();
     } catch (error) {
-      console.error('Error sending message:', error);
-      Alert.alert('Error', 'Failed to send message. Please try again.');
+      Alert.alert('Error', error);
     }
   };
 
@@ -59,21 +123,35 @@ const ChatScreen = ({ route, navigation }) => {
     navigation.setOptions({
       title: user.username,
       headerRight: () => (
-        <TouchableOpacity style={styles.deleteButton} onPress={deleteChat} activeOpacity={0.5}>
-          <MaterialCommunityIcons name='delete' color={colorScheme === 'dark' ? 'white' : 'black'} size={30} />
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={deleteChat}
+          activeOpacity={0.5}>
+          <MaterialCommunityIcons
+            name="delete"
+            color={colorScheme === 'dark' ? 'white' : 'black'}
+            size={30}
+          />
         </TouchableOpacity>
       ),
       headerLeft: () => (
-        <TouchableOpacity style={styles.deleteButton} onPress={() => navigation.navigate('UserProfileScreen', { user: user })} activeOpacity={0.5}>
-          <MaterialCommunityIcons name='arrow-left' color={colorScheme === 'dark' ? 'white' : 'black'} size={30} />
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => navigation.navigate('UserProfileScreen', {user: user})}
+          activeOpacity={0.5}>
+          <MaterialCommunityIcons
+            name="arrow-left"
+            color={colorScheme === 'dark' ? 'white' : 'black'}
+            size={30}
+          />
         </TouchableOpacity>
       ),
       headerStyle: {
         backgroundColor: colorScheme === 'dark' ? 'black' : 'white',
       },
-      headerTitleStyle:{
-        color: colorScheme === 'dark' ? 'white' : 'black'
-      }
+      headerTitleStyle: {
+        color: colorScheme === 'dark' ? 'white' : 'black',
+      },
     });
   }, []);
 
@@ -86,21 +164,17 @@ const ChatScreen = ({ route, navigation }) => {
 
   const deleteChat = async () => {
     try {
-      const messagesQuery = query(
-        collection(db, 'chats', chatId, 'messages'),
-        where('sender', 'in', [currentUserId, user.uid]),
-        where('receiver', 'in', [currentUserId, user.uid])
-      );
-      const snapshot = await getDocs(messagesQuery);
-      snapshot.docs.forEach(async (doc) => {
+      const chatRef = collection(db, 'chats', chatId, 'messages');
+      const querySnapshot = await getDocs(chatRef);
+      querySnapshot.forEach(async doc => {
         await deleteDoc(doc.ref);
       });
     } catch (error) {
-      console.error('Error deleting messages:', error);
+      Alert.alert('Error deleting messages:', error);
     }
   };
 
-  const formatDate = (date) => {
+  const formatDate = date => {
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
@@ -122,63 +196,86 @@ const ChatScreen = ({ route, navigation }) => {
     );
   };
 
+  const groupedMessages = messages.reduce((acc, message) => {
+    const dateKey = message.createdAt.toDate().toDateString();
+    if (!acc[dateKey]) {
+      acc[dateKey] = [];
+    }
+    acc[dateKey].push(message);
+    return acc;
+  }, {});
+  
   return (
-
     <KeyboardAvoidingView
       style={styles.container}
-      contentContainerStyle={{ flex: 1, backgroundColor: colorScheme === 'dark' ? 'black' : 'white' }}
-    >
+      contentContainerStyle={{
+        flex: 1,
+        backgroundColor: colorScheme === 'dark' ? 'black' : 'white',
+      }}>
       <KeyboardAwareFlatList
         ref={flatListRef}
-        data={messages}
+        data={Object.entries(groupedMessages)}
         keyExtractor={(item, index) => index.toString()}
-        renderItem={({ item, index }) => {
-          const itemDate = item.createdAt.toDate();
-          const isSameDayAsLastMessage = lastMessageDate && lastMessageDate.toDateString() === itemDate.toDateString();
-          const prevMessage = messages[index - 1];
-
-          const isSameSenderAsPrevMessage = prevMessage && prevMessage.sender === item.sender;
-          const isSameMinuteAsPrevMessage = prevMessage && isSameMinute(prevMessage.createdAt.toDate(), itemDate);
-          const isFirstMessageInMinute = !isSameMinuteAsPrevMessage || !isSameSenderAsPrevMessage || index === 0;
-
-          if (!isSameDayAsLastMessage) {
-            setShouldUpdateLastMessageDate(true);
+        renderItem={({item: [date, messages]}) => (
+          <>
+            <Text style={styles.date}>{formatDate(new Date(date))}</Text>
+            {messages.map((message, index) => {
+              const isSameMinuteAsPrevMessage = index > 0 && isSameMinute(messages[index - 1].createdAt.toDate(), message.createdAt.toDate());
+              const isFirstMessageInMinute = index === 0 || !isSameMinuteAsPrevMessage;
+              return (
+                <>
+                  {isFirstMessageInMinute && (
+                    <Text
+                      style={[
+                        styles.timestamp,
+                        {
+                          textAlign:
+                            message.sender === currentUserId ? 'right' : 'left',
+                        },
+                      ]}>
+                      {message.createdAt.toDate().toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </Text>
+                  )}
+                  <View
+                    style={[
+                      styles.messageContainer,
+                      message.sender === currentUserId
+                        ? styles.sentMessage
+                        : styles.receivedMessage,
+                    ]}>
+                    <Text style={styles.message}>{message.message}</Text>
+                  </View>
+                </>
+              );
+            })}
+          </>
+        )}
+        onScroll={({nativeEvent}) => {
+          // Check if user has scrolled to the top
+          if (
+            nativeEvent.contentOffset.y === 0 &&
+            messages.length >= pageSize &&
+            !loadingMoreMessages
+          ) {
+            // Load more messages
+            loadMoreMessages();
           }
-
-          return (
-            <View>
-              {!isSameDayAsLastMessage && (
-                <Text style={styles.date}>{formatDate(itemDate)}</Text>
-              )}
-              <View style={[
-                styles.messageContainer,
-                item.sender === currentUserId ? styles.sentMessage : styles.receivedMessage
-              ]}>
-                <Text style={styles.message}>{item.message}</Text>
-              </View>
-              {isFirstMessageInMinute && (
-                <Text style={[styles.timestamp, { textAlign: item.sender === currentUserId ? 'right' : 'left' }]}>
-                  {item.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </Text>
-              )}
-              {index === messages.length - 1 && isSameMinuteAsPrevMessage && (
-                <Text style={[styles.timestamp, { textAlign: item.sender === currentUserId ? 'right' : 'left' }]}>
-                  {item.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </Text>
-              )}
-            </View>
-          );
         }}
-
-        onContentSizeChange={() => flatListRef.current.scrollToEnd({ animated: false })}
-        onLayout={() => flatListRef.current.scrollToEnd({ animated: false })}
+        getItemLayout={(data, index) => ({
+          length: 50,
+          offset: 50 * index,
+          index,
+        })}
+        keyboardShouldPersistTaps="handled"
       />
-
-
+  
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
-          placeholder="Type a message..."
+          placeholder="Message..."
           value={message}
           onChangeText={setMessage}
           color={colorScheme === 'dark' ? 'white' : 'black'}
@@ -186,16 +283,21 @@ const ChatScreen = ({ route, navigation }) => {
           placeholderTextColor={colorScheme === 'dark' ? 'white' : 'black'}
         />
         <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
-          <MaterialCommunityIcons name='send' color={colorScheme === 'dark' ? 'white' : 'black'} size={30} />
+          <MaterialCommunityIcons
+            name="send"
+            color={colorScheme === 'dark' ? 'white' : 'black'}
+            size={30}
+          />
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
   );
+  
 };
 
 export default ChatScreen;
 
-const getStyles = (colorScheme) => {
+const getStyles = colorScheme => {
   return StyleSheet.create({
     container: {
       flex: 1,
@@ -206,7 +308,7 @@ const getStyles = (colorScheme) => {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      width: '100%'
+      width: '100%',
     },
     input: {
       height: 50,
@@ -215,17 +317,16 @@ const getStyles = (colorScheme) => {
       borderColor: colorScheme === 'dark' ? 'white' : 'black',
       width: '89%',
       padding: 10,
-      marginVertical: 5
+      marginVertical: 5,
+      color: colorScheme === 'dark' ? 'white' : 'black', // Set text color
+      backgroundColor: colorScheme === 'dark' ? '#111' : '#f9f9f9', // Set background color
     },
-    sendButton: {
-    },
-    sendButtonText: {
-    },
+    sendButton: {},
+    sendButtonText: {},
     deleteButton: {
       margin: 10,
     },
-    deleteButtonText: {
-    },
+    deleteButtonText: {},
     messageContainer: {
       padding: 10,
       borderRadius: 5,
@@ -235,7 +336,7 @@ const getStyles = (colorScheme) => {
       backgroundColor: colorScheme === 'dark' ? 'black' : 'white',
       color: colorScheme === 'dark' ? 'white' : 'black',
       position: 'relative',
-      marginVertical: 7
+      marginVertical: 7,
     },
     sentMessage: {
       alignSelf: 'flex-end',
@@ -253,7 +354,7 @@ const getStyles = (colorScheme) => {
     },
     message: {
       fontSize: 16,
-      color: colorScheme === 'dark' ? 'white' : 'black'
+      color: colorScheme === 'dark' ? 'white' : 'black',
     },
     timestamp: {
       fontSize: 13,
