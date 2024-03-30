@@ -94,7 +94,7 @@ const ChatScreen = ({route, navigation}) => {
         setLastVisibleMessage(snapshot.docs[data.length - 1]);
       }
     } catch (error) {
-      console.error('Error loading more messages:', error);
+      Alert.alert('Error loading more messages:', error);
     } finally {
       setLoadingMoreMessages(false);
     }

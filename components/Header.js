@@ -5,7 +5,7 @@ const Header = () => {
     const colorScheme = useColorScheme();
     const styles = getStyles(colorScheme);
     return (
-        <View>
+        <View style={styles.container}>
             <Text style={styles.logo}>RPI</Text>
         </View>
     )
@@ -15,13 +15,17 @@ export default Header
 
 const getStyles = (colorScheme) =>{
     return StyleSheet.create({
+    container:{
+        width: '100%'
+    },
     logo:{
         color: colorScheme === 'dark' ? 'white' : 'black',
         marginHorizontal: 6,
-        marginVertical: 9,
+        marginVertical: 10,
         fontSize: 24,
         letterSpacing: 20,
-        fontWeight: 'bold' 
+        fontWeight: 'bold',
+        textAlign: 'center',
     }
 });
 }

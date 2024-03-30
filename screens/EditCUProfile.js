@@ -74,17 +74,7 @@ const EditCUProfile = ({navigation}) => {
             </TouchableOpacity>
           </View>
           <View style={styles.listContainer}>
-            <TouchableOpacity>
-              <View style={styles.listItem}>
-                <Text style={styles.listText}>Change Email</Text>
-                <MaterialCommunityIcons
-                  name="arrow-right"
-                  color={colorScheme === 'dark' ? 'white' : 'black'}
-                  size={30}
-                />
-              </View>
-            </TouchableOpacity>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('ChangePassword')}>
               <View style={styles.listItem}>
                 <Text style={styles.listText}>Change Password</Text>
                 <MaterialCommunityIcons

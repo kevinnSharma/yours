@@ -19,7 +19,7 @@ const UserProfileScreen = ({ navigation, route }) => {
       setUserProfile(user);
       setLoading(false);
     }
-
+    
     navigation.setOptions({
       headerShown: false
     });
