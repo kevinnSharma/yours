@@ -13,6 +13,7 @@ import {
 import {collection, addDoc, serverTimestamp} from 'firebase/firestore';
 import {db} from '../firebase';
 import {getAuth} from 'firebase/auth';
+import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 const PublishDevNews = ({navigation}) => {
   const colorScheme = useColorScheme();
   const styles = getStyles(colorScheme);
@@ -55,6 +56,16 @@ const PublishDevNews = ({navigation}) => {
   return (
     <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
       <View style={styles.container}>
+        <TouchableOpacity
+          activeOpacity={0.5}
+          onPress={() => navigation.navigate('BottomTab')}>
+          <MaterialCommunityIcons
+            name="arrow-left"
+            color={colorScheme === 'dark' ? 'white' : 'black'}
+            size={30}
+            style={{marginVertical: 15, marginHorizontal: 10}}
+          />
+        </TouchableOpacity>
         <Text style={styles.headingText}>Publish Developer News</Text>
         <Text style={styles.label}>Heading</Text>
         <TextInput

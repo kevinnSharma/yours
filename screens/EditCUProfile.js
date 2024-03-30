@@ -51,6 +51,9 @@ const EditCUProfile = ({navigation}) => {
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.main}>
         <View style={styles.container}>
+      <TouchableOpacity activeOpacity={0.5} onPress={() => navigation.goBack()}>
+        <MaterialCommunityIcons name="arrow-left" color={colorScheme === 'dark' ? 'white' : 'black'} size={30} style={{ marginVertical: 15, marginHorizontal: 10 }} />
+      </TouchableOpacity>
           <Text style={styles.headingText}>Modify Account</Text>
           <View style={styles.usernameContainer}>
             <View style={styles.textInputContainer}>
@@ -97,11 +100,9 @@ const getStyles = colorScheme => {
   return StyleSheet.create({
     main: {
       flex: 1,
-      alignItems: 'center',
       backgroundColor: colorScheme === 'dark' ? 'black' : 'white',
     },
     container: {
-      marginVertical: 10,
       marginHorizontal: 10,
     },
     headingText: {

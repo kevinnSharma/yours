@@ -59,16 +59,18 @@ const UserProfile = ({navigation}) => {
         height: 300,
         cropping: true,
       });
-
+  
       const imageRef = storage().ref(
         `profile_pictures/${auth.currentUser.uid}`,
       );
       await imageRef.putFile(image.path);
-
+  
       const imageUrl = await imageRef.getDownloadURL();
       await updateProfile(auth.currentUser, {photoURL: imageUrl});
-
+  
       setUserProfile({...userProfile, photoURL: imageUrl});
+  
+      // Update the profile picture in Firestore
       const usersRef = collection(db, 'users');
       const q = query(usersRef, where('uid', '==', auth.currentUser.uid));
       const querySnapshot = await getDocs(q);
@@ -82,6 +84,8 @@ const UserProfile = ({navigation}) => {
       Alert.alert(error);
     }
   };
+  
+  
   const handleLogout = async () => {
     try {
       await signOut(auth);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,12 @@ import {
   Alert,
 } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import { getAuth, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+import {
+  getAuth,
+  updatePassword,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+} from 'firebase/auth';
 
 const ChangePassword = ({navigation}) => {
   const colorScheme = useColorScheme();
@@ -27,26 +32,41 @@ const ChangePassword = ({navigation}) => {
   const handleChangePassword = async () => {
     try {
       const user = auth.currentUser;
-  
+
       // Reauthenticate the user
-      const credential = EmailAuthProvider.credential(user.email, currentPassword);
+      const credential = EmailAuthProvider.credential(
+        user.email,
+        currentPassword,
+      );
       await reauthenticateWithCredential(user, credential);
-  
+
       // Update the password
       await updatePassword(user, newPassword);
-      Alert.alert('Password Updated', 'Your password has been successfully updated.');
+      Alert.alert(
+        'Password Updated',
+        'Your password has been successfully updated.',
+      );
       setCurrentPassword('');
       setNewPassword('');
     } catch (error) {
       Alert.alert('Error', error.message);
     }
   };
-  
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.main}>
         <View style={styles.container}>
+          <TouchableOpacity
+            activeOpacity={0.5}
+            onPress={() => navigation.goBack()}>
+            <MaterialCommunityIcons
+              name="arrow-left"
+              color={colorScheme === 'dark' ? 'white' : 'black'}
+              size={30}
+              style={{marginVertical: 15, marginHorizontal: 10}}
+            />
+          </TouchableOpacity>
           <Text style={styles.headingText}>Change Password</Text>
           <View style={styles.passwordContainer}>
             <View style={styles.textInputContainer}>
@@ -87,7 +107,7 @@ const ChangePassword = ({navigation}) => {
 
 export default ChangePassword;
 
-const getStyles = (colorScheme) => {
+const getStyles = colorScheme => {
   return StyleSheet.create({
     main: {
       flex: 1,
@@ -97,7 +117,7 @@ const getStyles = (colorScheme) => {
     container: {
       marginVertical: 10,
       marginHorizontal: 10,
-      width: '95%'
+      width: '95%',
     },
     headingText: {
       color: colorScheme === 'dark' ? 'white' : 'black',

@@ -44,7 +44,6 @@ const UserProfileScreen = ({ navigation, route }) => {
 
     // Navigate to ChatScreen with chatId
     navigation.reset({
-      index: 0,
       routes: [{ name: 'ChatScreen', params: { chatId, user: userProfile } }]
     });
   };

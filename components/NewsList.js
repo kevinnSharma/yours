@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,55 +7,92 @@ import {
   useColorScheme,
   Image,
   TouchableOpacity,
-  Alert
+  Alert,
+  Linking,
+  RefreshControl,
 } from 'react-native';
-import {collection, query, orderBy, getDocs, limit} from 'firebase/firestore';
-import {db} from '../firebase';
+import { collection, query, orderBy, getDocs, limit } from 'firebase/firestore';
+import { db } from '../firebase';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-import {getAuth} from 'firebase/auth';
-import {deleteDoc, doc} from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
+import { deleteDoc, doc } from 'firebase/firestore';
 
 const NewsList = () => {
   const colorScheme = useColorScheme();
   const styles = getStyles(colorScheme);
   const [news, setNews] = useState([]);
+  const [refreshing, setRefreshing] = useState(false);
   const auth = getAuth();
-  useEffect(() => {
-    const fetchNews = async () => {
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
       const q = query(
         collection(db, 'devNews'),
         orderBy('timestamp', 'desc'),
-        limit(10), // Limit to 10 documents per page
+        limit(10),
       );
       const querySnapshot = await getDocs(q);
       const newsData = [];
       querySnapshot.forEach(doc => {
-        newsData.push({id: doc.id, ...doc.data()});
+        newsData.push({ id: doc.id, ...doc.data() });
       });
       setNews(newsData);
-    };
+    } catch (error) {
+      console.error('Error refreshing news:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
-    fetchNews();
-  });
+  useEffect(() => {
+    onRefresh();
+  }, []);
+
   const handleDelete = async (id) => {
     try {
       await deleteDoc(doc(db, 'devNews', id));
-      setNews((prevNews) => prevNews.filter((item) => item.id !== id));
+      setNews(prevNews => prevNews.filter(item => item.id !== id));
       Alert.alert('Success', 'News deleted successfully');
     } catch (error) {
       console.error('Error deleting news:', error);
       Alert.alert('Error', 'Failed to delete news');
     }
   };
+
+  const handleLinkPress = (url) => {
+    Linking.openURL(url);
+  };
+
+  const renderTextWithLinks = (text) => {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const parts = text.split(urlRegex);
+    return parts.map((part, index) => {
+      if (part.match(urlRegex)) {
+        return (
+          <TouchableOpacity
+            key={index}
+            onPress={() => handleLinkPress(part)}
+          >
+            <Text style={styles.link}>{part}</Text>
+          </TouchableOpacity>
+        );
+      }
+      return <Text key={index}>{part}</Text>;
+    });
+  };
+
   return (
     <View style={styles.container}>
       <FlatList
         data={news}
         keyExtractor={item => item.id}
-        renderItem={({item}) => (
+        renderItem={({ item }) => (
           <View style={styles.newsItem}>
             <Text style={styles.newsHeading}>{item.heading}</Text>
-            <Text style={styles.newsContent}>{item.content}</Text>
+            <Text style={styles.newsContent}>
+              {renderTextWithLinks(item.content)}
+            </Text>
             <View style={styles.uploadedbyContainer}>
               <Image
                 source={{
@@ -79,6 +116,14 @@ const NewsList = () => {
             </View>
           </View>
         )}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colorScheme === 'dark' ? 'black' : 'white']}
+          />
+        }
+        style={{ flex: 1 }}
       />
     </View>
   );
@@ -121,6 +166,10 @@ const getStyles = colorScheme => {
       borderRadius: 50,
       marginRight: 10,
       marginVertical: 8,
+    },
+    link: {
+      color: '#baaced',
+      textDecorationLine: 'underline',
     },
   });
 };
