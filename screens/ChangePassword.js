@@ -29,17 +29,16 @@ const ChangePassword = ({navigation}) => {
       headerShown: false,
     });
   }, []);
+
   const handleChangePassword = async () => {
     try {
       const user = auth.currentUser;
-
       // Reauthenticate the user
       const credential = EmailAuthProvider.credential(
         user.email,
         currentPassword,
       );
       await reauthenticateWithCredential(user, credential);
-
       // Update the password
       await updatePassword(user, newPassword);
       Alert.alert(

@@ -50,7 +50,7 @@ const RegisterScreen = ({ navigation }) => {
       const imageURLD = await imageRef.getDownloadURL();
       setImageURL(imageURLD);
     } catch (error) {
-      Alert.error(error);
+      Alert.alert(error);
     }
   };
 

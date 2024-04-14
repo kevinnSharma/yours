@@ -39,7 +39,7 @@ const NewsList = () => {
       });
       setNews(newsData);
     } catch (error) {
-      console.error('Error refreshing news:', error);
+      Alert.alert('Error refreshing news:', error.message);
     } finally {
       setRefreshing(false);
     }
@@ -55,8 +55,7 @@ const NewsList = () => {
       setNews(prevNews => prevNews.filter(item => item.id !== id));
       Alert.alert('Success', 'News deleted successfully');
     } catch (error) {
-      console.error('Error deleting news:', error);
-      Alert.alert('Error', 'Failed to delete news');
+      Alert.alert('Error refreshing news:', error.message);
     }
   };
 

@@ -55,7 +55,7 @@ const UserSearch = ({navigation}) => {
       <View style={styles.searchContainer}>
         <Input
           containerStyle={styles.input}
-          placeholder="Search users"
+          placeholder="Search"
           value={searchQuery}
           onChangeText={text => setSearchQuery(text)}
           inputStyle={{color: colorScheme === 'dark' ? 'white' : 'black'}}

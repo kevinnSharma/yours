@@ -49,7 +49,7 @@ const PublishDevNews = ({navigation}) => {
       setHeading('');
       setContent('');
     } catch (error) {
-      Alert.error('Error publishing news:', error);
+      Alert.alert('Error publishing news:', error);
     }
   };
 

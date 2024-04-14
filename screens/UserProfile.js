@@ -6,7 +6,7 @@ import {
   Image,
   TouchableOpacity,
   useColorScheme,
-  Alert
+  Alert,
 } from 'react-native';
 import {getAuth, signOut, updateProfile} from 'firebase/auth';
 import storage from '@react-native-firebase/storage';
@@ -22,6 +22,8 @@ import {
 } from 'firebase/firestore';
 import {db} from '../firebase';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import DevNews from '../components/DevNews';
+import NewsList from '../components/NewsList';
 const UserProfile = ({navigation}) => {
   const auth = getAuth();
   const [userProfile, setUserProfile] = useState(null);
@@ -59,17 +61,17 @@ const UserProfile = ({navigation}) => {
         height: 300,
         cropping: true,
       });
-  
+
       const imageRef = storage().ref(
         `profile_pictures/${auth.currentUser.uid}`,
       );
       await imageRef.putFile(image.path);
-  
+
       const imageUrl = await imageRef.getDownloadURL();
       await updateProfile(auth.currentUser, {photoURL: imageUrl});
-  
+
       setUserProfile({...userProfile, photoURL: imageUrl});
-  
+
       // Update the profile picture in Firestore
       const usersRef = collection(db, 'users');
       const q = query(usersRef, where('uid', '==', auth.currentUser.uid));
@@ -84,8 +86,7 @@ const UserProfile = ({navigation}) => {
       Alert.alert(error);
     }
   };
-  
-  
+
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -163,6 +164,7 @@ const UserProfile = ({navigation}) => {
               onPress={handleLogout}>
               <Text style={styles.editButtonText}>Logout</Text>
             </TouchableOpacity>
+          <DevNews navigation={navigation} />
           </View>
         </>
       )}
@@ -204,13 +206,15 @@ const styles = StyleSheet.create({
   button: {
     alignItems: 'center',
     marginVertical: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-around'
   },
   editButton: {
     backgroundColor: '#faad14',
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 5,
-    width: 190,
+    width: '40%',
   },
   editButtonText: {
     color: 'black',

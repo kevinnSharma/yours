@@ -4,6 +4,7 @@ import { useColorScheme, StyleSheet, TouchableOpacity } from 'react-native';
 import HomeScreen from './HomeScreen';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import UserProfile from './UserProfile';
+import DevSceen from './DevSceen';
 
 const Tab = createBottomTabNavigator();
 
@@ -17,6 +18,7 @@ const BottomTab = ({ navigation }) => {
 
   return (
     <Tab.Navigator
+      initialRouteName='Home'
       screenOptions={({ route }) => ({
         tabBarStyle: {
           backgroundColor: colorScheme === 'dark' ? 'black' : 'white',
@@ -27,6 +29,11 @@ const BottomTab = ({ navigation }) => {
         tabBarInactiveTintColor: 'gray',
       })}
     >
+        <Tab.Screen name="DevScreen" component={DevSceen} options={{
+          tabBarIcon: ({ color, size, focused }) => (
+            <MaterialCommunityIcons name="mail" color={color} size={focused ? 30 : 24} />
+          ),
+        }} />
         <Tab.Screen name="Home" component={HomeScreen} options={{
           tabBarIcon: ({ color, size, focused }) => (
             <MaterialCommunityIcons name="home" color={color} size={focused ? 30 : 24} />

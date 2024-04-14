@@ -8,13 +8,13 @@ import {
   KeyboardAvoidingView,
   useColorScheme,
   Alert,
-  Keyboard
+  Image,
+  Linking
 } from 'react-native';
 import {
   collection,
   addDoc,
   query,
-  where,
   orderBy,
   limit,
   onSnapshot,
@@ -26,7 +26,8 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import {KeyboardAwareFlatList} from 'react-native-keyboard-aware-scroll-view';
 import {db} from '../firebase';
 import {getAuth} from 'firebase/auth';
-
+import ImagePicker from 'react-native-image-crop-picker';
+import storage from '@react-native-firebase/storage';
 const ChatScreen = ({route, navigation}) => {
   const {user, chatId} = route.params;
   const [message, setMessage] = useState('');
@@ -43,10 +44,11 @@ const ChatScreen = ({route, navigation}) => {
   const colorScheme = useColorScheme();
   const styles = getStyles(colorScheme);
   const pageSize = 20; // Number of messages to load per page
+  const [imageUri, setImageUri] = useState(null);
 
   const scrollToEnd = () => {
     if (flatListRef.current) {
-      flatListRef.current.scrollToEnd({ animated: true });
+      flatListRef.current.scrollToEnd({animated: true});
     }
   };
 
@@ -75,7 +77,7 @@ const ChatScreen = ({route, navigation}) => {
   const loadMoreMessages = async () => {
     if (!lastVisibleMessage || loadingMoreMessages) return;
     setLoadingMoreMessages(true);
-  
+
     try {
       const snapshot = await getDocs(
         query(
@@ -99,23 +101,75 @@ const ChatScreen = ({route, navigation}) => {
       setLoadingMoreMessages(false);
     }
   };
+  const handleLinkPress = (url) => {
+    Linking.openURL(url);
+  };
+  const uploadImage = async () => {
+    try {
+      const image = await ImagePicker.openPicker({
+        width: 300,
+        height: 300,
+        cropping: true,
+      });
 
+      setImageUri(image.path);
+    } catch (error) {
+      Alert.alert('Error', error.message);
+    }
+  };
+const renderTextWithLinks = (text) => {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const parts = text.split(urlRegex);
+    return parts.map((part, index) => {
+      if (part.match(urlRegex)) {
+        return (
+          <TouchableOpacity
+            key={index}
+            onPress={() => handleLinkPress(part)}
+          >
+            <Text style={styles.link}>{part}</Text>
+          </TouchableOpacity>
+        );
+      }
+      return <Text key={index}>{part}</Text>;
+    });
+  };
   const sendMessage = async () => {
     if (message.trim() === '') {
       return;
     }
     setMessage('');
     try {
-      await addDoc(collection(db, 'chats', chatId, 'messages'), {
-        sender: currentUserId,
-        receiver: user.uid,
-        message: message,
-        senderName: currentUserName,
-        createdAt: new Date(),
-      });
+      if (imageUri) {
+        const imageRef = storage().ref(
+          `inchat-images/${currentUserId}/${new Date().getTime()}`,
+        );
+        await imageRef.putFile(imageUri);
+
+        const imageUrl = await imageRef.getDownloadURL();
+
+        await addDoc(collection(db, 'chats', chatId, 'messages'), {
+          sender: currentUserId,
+          receiver: user.uid,
+          message: message,
+          image: imageUrl,
+          senderName: currentUserName,
+          createdAt: new Date(),
+        });
+
+        setImageUri(null);
+      } else {
+        await addDoc(collection(db, 'chats', chatId, 'messages'), {
+          sender: currentUserId,
+          receiver: user.uid,
+          message: message,
+          senderName: currentUserName,
+          createdAt: new Date(),
+        });
+      }
       scrollToEnd();
     } catch (error) {
-      Alert.alert('Error', error);
+      Alert.alert('Error', error.message);
     }
   };
 
@@ -204,7 +258,7 @@ const ChatScreen = ({route, navigation}) => {
     acc[dateKey].push(message);
     return acc;
   }, {});
-  
+
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -220,8 +274,14 @@ const ChatScreen = ({route, navigation}) => {
           <>
             <Text style={styles.date}>{formatDate(new Date(date))}</Text>
             {messages.map((message, index) => {
-              const isSameMinuteAsPrevMessage = index > 0 && isSameMinute(messages[index - 1].createdAt.toDate(), message.createdAt.toDate());
-              const isFirstMessageInMinute = index === 0 || !isSameMinuteAsPrevMessage;
+              const isSameMinuteAsPrevMessage =
+                index > 0 &&
+                isSameMinute(
+                  messages[index - 1].createdAt.toDate(),
+                  message.createdAt.toDate(),
+                );
+              const isFirstMessageInMinute =
+                index === 0 || !isSameMinuteAsPrevMessage;
               return (
                 <>
                   {isFirstMessageInMinute && (
@@ -246,7 +306,22 @@ const ChatScreen = ({route, navigation}) => {
                         ? styles.sentMessage
                         : styles.receivedMessage,
                     ]}>
-                    <Text style={styles.message}>{message.message}</Text>
+                    {message.image ? (
+                      <View
+                        style={[
+                          styles.messageContainer,
+                          {flexDirection: 'Column'},
+                        ]}>
+                        <Image
+                          source={{uri: message.image}}
+                          style={{width: 200, height: 200, borderRadius: 5}}
+                          resizeMode="contain"
+                        />
+                      <Text style={styles.message}>{message.message}</Text>
+                      </View>
+                    ) : (
+                      <Text style={styles.message}>{renderTextWithLinks(message.message)}</Text>
+                    )}
                   </View>
                 </>
               );
@@ -254,13 +329,11 @@ const ChatScreen = ({route, navigation}) => {
           </>
         )}
         onScroll={({nativeEvent}) => {
-          // Check if user has scrolled to the top
           if (
             nativeEvent.contentOffset.y === 0 &&
             messages.length >= pageSize &&
             !loadingMoreMessages
           ) {
-            // Load more messages
             loadMoreMessages();
           }
         }}
@@ -271,28 +344,50 @@ const ChatScreen = ({route, navigation}) => {
         })}
         keyboardShouldPersistTaps="handled"
       />
-  
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Message..."
-          value={message}
-          onChangeText={setMessage}
-          color={colorScheme === 'dark' ? 'white' : 'black'}
-          fontSize={16}
-          placeholderTextColor={colorScheme === 'dark' ? 'white' : 'black'}
-        />
-        <TouchableOpacity style={styles.sendButton} onPress={sendMessage}>
-          <MaterialCommunityIcons
-            name="send"
+      <View style={styles.masterInput}>
+        {imageUri && (
+          <View style={styles.selectedImageContainer}>
+            <Image
+              source={{uri: imageUri}}
+              style={styles.selectedImage}
+              resizeMode="contain"
+            />
+          </View>
+        )}
+        <View style={styles.inputContainer}>
+          <TouchableOpacity
+            style={styles.sendButton}
+            activeOpacity={0.5}
+            onPress={uploadImage}>
+            <MaterialCommunityIcons
+              name="image"
+              color={colorScheme === 'dark' ? 'white' : 'black'}
+              size={30}
+            />
+          </TouchableOpacity>
+          <TextInput
+            style={styles.input}
+            placeholder="Message..."
+            value={message}
+            onChangeText={setMessage}
             color={colorScheme === 'dark' ? 'white' : 'black'}
-            size={30}
+            fontSize={16}
+            placeholderTextColor={colorScheme === 'dark' ? 'white' : 'black'}
           />
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.sendButton}
+            onPress={sendMessage}
+            activeOpacity={0.5}>
+            <MaterialCommunityIcons
+              name="send"
+              color={colorScheme === 'dark' ? 'white' : 'black'}
+              size={30}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
     </KeyboardAvoidingView>
   );
-  
 };
 
 export default ChatScreen;
@@ -307,19 +402,16 @@ const getStyles = colorScheme => {
     inputContainer: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
       width: '100%',
+      borderWidth: 1,
+      borderRadius: 20,
+      paddingHorizontal: 10,
+      borderColor: colorScheme === 'dark' ? 'white' : 'black',
+      backgroundColor: colorScheme === 'dark' ? '#111' : '#f9f9f9', // Set background color
     },
     input: {
-      height: 50,
-      borderRadius: 20,
-      borderWidth: 1,
-      borderColor: colorScheme === 'dark' ? 'white' : 'black',
-      width: '89%',
-      padding: 10,
-      marginVertical: 5,
+      width: '82%',
       color: colorScheme === 'dark' ? 'white' : 'black', // Set text color
-      backgroundColor: colorScheme === 'dark' ? '#111' : '#f9f9f9', // Set background color
     },
     sendButton: {},
     sendButtonText: {},
@@ -366,6 +458,18 @@ const getStyles = colorScheme => {
       color: 'gray',
       alignSelf: 'center',
       marginBottom: 10,
+    },
+    selectedImageContainer: {
+      marginBottom: 10,
+    },
+    selectedImage: {
+      width: 90,
+      height: 90,
+      borderRadius: 5,
+    },
+    link: {
+      color: '#baaced',
+      textDecorationLine: 'underline',
     },
   });
 };
